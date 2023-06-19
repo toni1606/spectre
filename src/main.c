@@ -52,22 +52,27 @@ int main() {
   SDL_Point *points = malloc(sizeof(SDL_Point) * len);
   compute_points(points, decoded, len);
 
-  // Main-Loop
+  // Main-Loop -> iterates once per screen.
   size_t i = 0;
   while (!SDL_QuitRequested()) {
+    // Set Background to black.
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     SDL_RenderClear(renderer);
+    // Set Point color to red.
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
 
+    // Break out the loop when all the points have been printed.
     if (i >= len / WINDOW_WIDTH)
       break;
 
+    // Render the points from the last point drawn with a count of WINDOW_WIDTH.
+    // Pointer Arithmetic to skip how many screens were drawn.
     SDL_RenderDrawPoints(renderer, points + (i * WINDOW_WIDTH), WINDOW_WIDTH);
-    // SDL_RenderDrawPoint(renderer, x, cy + (decoded[i] * step_y));
     SDL_RenderPresent(renderer);
 
     i++;
-    SDL_Delay(11);
+    // Sleep for the correct time to make the waveform in sync with the audio.
+    SDL_Delay(1000.0f / (sample_rate / (float)WINDOW_WIDTH));
   }
 
   free(points);
@@ -94,16 +99,29 @@ void compute_points(SDL_Point *points, short *dat, size_t len) {
 
   int x = 0;
   for (size_t i = 0; i < len; i++) {
-    if (x % 512 == 0)
+    // Reset the x-coordinate, each time we go over a screen width.
+    if (x % WINDOW_WIDTH == 0)
       x = 0;
 
     short val = dat[i];
     int y = 0;
+
+    // If the value is negative, it needs to be below the center (height / 2)
+    // otherwise it is above the center.
+    //
+    // To find the right value the algorithm normalises the point with its
+    // respective minimum or maximum.
+    //
+    // It follows this by setting the y-coordinate value with regart to the
+    // beforementioned center y. The normalised value is firslty scaled then
+    // subtracted or added to the center, depending on the orientation of the
+    // value (<0 || >0).
+    min = abs(min);
     if (val < 0) {
       float norm = (float)abs(val) / (float)min;
       y = (int)CENTER_Y - ((float)WINDOW_HEIGHT / 2) * norm;
     } else {
-      float norm = (float)val / (float)min;
+      float norm = (float)val / (float)max;
       y = (int)CENTER_Y + ((float)WINDOW_HEIGHT / 2) * norm;
     }
 
