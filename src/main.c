@@ -59,10 +59,10 @@ int main() {
     SDL_RenderClear(renderer);
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
 
-    if (i >= len / 512)
+    if (i >= len / WINDOW_WIDTH)
       break;
 
-    SDL_RenderDrawPoints(renderer, points + (i * 512), 512);
+    SDL_RenderDrawPoints(renderer, points + (i * WINDOW_WIDTH), WINDOW_WIDTH);
     // SDL_RenderDrawPoint(renderer, x, cy + (decoded[i] * step_y));
     SDL_RenderPresent(renderer);
 
