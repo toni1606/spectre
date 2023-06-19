@@ -2,17 +2,20 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_error.h>
 #include <SDL2/SDL_quit.h>
+#include <SDL2/SDL_rect.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
 #include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define WINDOW_HEIGHT 512
 #define WINDOW_WIDTH 512
 #define CENTER_Y (WINDOW_HEIGHT / 2)
 
 void min_max(short *dat, int len, int *min, int *max);
+void compute_points(SDL_Point *points, short *dat, size_t len);
 
 int main() {
   // Load and decode OGG file.
@@ -30,9 +33,6 @@ int main() {
     return 1;
   }
 
-  int min, max;
-  min_max(decoded, len, &min, &max);
-
   // Init SDL
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
     fprintf(stderr, "ERROR: Could not initialise SDL_VIDEO: %s\n",
@@ -49,37 +49,28 @@ int main() {
   SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
   SDL_ShowWindow(window);
 
+  SDL_Point *points = malloc(sizeof(SDL_Point) * len);
+  compute_points(points, decoded, len);
+
   // Main-Loop
   size_t i = 0;
-  int x = 0;
   while (!SDL_QuitRequested()) {
-    if (x % 512 == 0) {
-      x = 0;
-      SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-      SDL_RenderClear(renderer);
-      SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
-    }
-    if (i >= len)
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    SDL_RenderClear(renderer);
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
+
+    if (i >= len / 512)
       break;
 
-    short val = decoded[i];
-    int y = 0;
-    if (val < 0) {
-      float norm = (float)abs(val) / (float)min;
-      y = (int)CENTER_Y - ((float)WINDOW_HEIGHT / 2) * norm;
-    } else {
-      float norm = (float)val / (float)min;
-      y = (int)CENTER_Y + ((float)WINDOW_HEIGHT / 2) * norm;
-    }
-
+    SDL_RenderDrawPoints(renderer, points + (i * 512), 512);
     // SDL_RenderDrawPoint(renderer, x, cy + (decoded[i] * step_y));
-    SDL_RenderDrawPoint(renderer, x, y);
     SDL_RenderPresent(renderer);
 
-    x++;
-    i += 2;
+    i++;
+    SDL_Delay(11);
   }
 
+  free(points);
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();
@@ -94,5 +85,29 @@ void min_max(short *dat, int len, int *min, int *max) {
       *min = dat[i];
     if (dat[i] > *max)
       *max = dat[i];
+  }
+}
+
+void compute_points(SDL_Point *points, short *dat, size_t len) {
+  int min, max;
+  min_max(dat, len, &min, &max);
+
+  int x = 0;
+  for (size_t i = 0; i < len; i++) {
+    if (x % 512 == 0)
+      x = 0;
+
+    short val = dat[i];
+    int y = 0;
+    if (val < 0) {
+      float norm = (float)abs(val) / (float)min;
+      y = (int)CENTER_Y - ((float)WINDOW_HEIGHT / 2) * norm;
+    } else {
+      float norm = (float)val / (float)min;
+      y = (int)CENTER_Y + ((float)WINDOW_HEIGHT / 2) * norm;
+    }
+
+    x += 1;
+    points[i] = (SDL_Point){.x = x, .y = y};
   }
 }
