@@ -36,6 +36,24 @@ int main() {
     return 1;
   }
 
+  double complex *in = malloc(sizeof(*in) * len / 50);
+  double complex *out = malloc(sizeof(*out) * len / 50);
+
+  for (size_t i = 0; i < len / 50; i++) {
+    in[i] = (double)decoded[i] + 0 * I;
+  }
+
+  printf("Pre DFT\n");
+  compute_dft(in, out, len / 50);
+  printf("After DFT\n");
+
+  for (size_t i = 0; i < len / 50; i++) {
+    printf("%lf + %lfi\n", creal(out[i]), cimag(out[i]));
+  }
+
+  free(out);
+  free(in);
+
   // Init SDL
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
     fprintf(stderr, "ERROR: Could not initialise SDL_VIDEO: %s\n",
@@ -135,7 +153,7 @@ void compute_points(SDL_Point *points, short *dat, size_t len) {
 
 void compute_dft(double complex *input, double complex *output, size_t n) {
   // Do for each output element.
-  for (size_t i = 1; i < n; i++) {
+  for (size_t i = 0; i < n; i++) {
     // Do for each input element. (Compute the sum).
     double complex sum = 0.0;
     for (size_t j = 0; j < n; j++) {
