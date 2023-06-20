@@ -6,7 +6,9 @@
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_video.h>
+#include <complex.h>
 #include <limits.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -16,6 +18,7 @@
 
 void min_max(short *dat, int len, int *min, int *max);
 void compute_points(SDL_Point *points, short *dat, size_t len);
+void compute_dft(double complex *input, double complex *output, size_t n);
 
 int main() {
   // Load and decode OGG file.
@@ -127,5 +130,21 @@ void compute_points(SDL_Point *points, short *dat, size_t len) {
 
     x += 1;
     points[i] = (SDL_Point){.x = x, .y = y};
+  }
+}
+
+void compute_dft(double complex *input, double complex *output, size_t n) {
+  // Do for each output element.
+  for (size_t i = 1; i < n; i++) {
+    // Do for each input element. (Compute the sum).
+    double complex sum = 0.0;
+    for (size_t j = 0; j < n; j++) {
+      // sum += input * e^(complex)(-2 * PI * j * i / n)
+      // sum += input * e^exponent
+      double complex exponent = -2 * M_PI * j * i / n * I;
+      sum += input[j] * cexp(exponent);
+    }
+
+    output[i] = sum;
   }
 }
