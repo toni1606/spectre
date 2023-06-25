@@ -18,7 +18,8 @@
 
 void min_max(short *dat, int len, int *min, int *max);
 void compute_points(SDL_Point *points, short *dat, size_t len);
-void compute_dft(double complex *input, double complex *output, size_t n);
+void dft_compute(double complex *input, double complex *output, size_t n);
+void dft_amp(double complex *input, double *output, size_t n);
 
 int main() {
   // Load and decode OGG file.
@@ -26,33 +27,35 @@ int main() {
   int sample_rate;
   short *decoded;
 
-  int len = stb_vorbis_decode_filename(
-      "/home/toni/Music/The Beatles/Let It Be (deluxe "
-      "2CD edition)/05 - Dig It (2021 mix).ogg",
-      &channels, &sample_rate, &decoded);
+  int len =
+      stb_vorbis_decode_filename("/home/toni/Documents/Files/Personal_TG/"
+                                 "programming/Projects/spectrogram/sine.ogg",
+                                 &channels, &sample_rate, &decoded);
 
   if (!len) {
     fprintf(stderr, "ERROR: Could not read file!\n");
     return 1;
   }
 
-  double complex *in = malloc(sizeof(*in) * len / 50);
-  double complex *out = malloc(sizeof(*out) * len / 50);
+  double complex *complex_decoded = malloc(sizeof(*complex_decoded) * len / 50);
+  double complex *dft_out = malloc(sizeof(*dft_out) * len / 50);
+  double *amplitudes = malloc(sizeof(*amplitudes) * len / 50);
 
   for (size_t i = 0; i < len / 50; i++) {
-    in[i] = (double)decoded[i] + 0 * I;
+    complex_decoded[i] = (double)decoded[i] + 0 * I;
   }
 
-  printf("Pre DFT\n");
-  compute_dft(in, out, len / 50);
-  printf("After DFT\n");
+  // Compute DFT and extract the amplitudes from the complex numbers.
+  dft_compute(complex_decoded, dft_out, len / 50);
+  dft_amp(dft_out, amplitudes, len / 50);
 
   for (size_t i = 0; i < len / 50; i++) {
-    printf("%lf + %lfi\n", creal(out[i]), cimag(out[i]));
+    printf("amp[%ld]: %lf\n", i, amplitudes[i]);
   }
 
-  free(out);
-  free(in);
+  free(amplitudes);
+  free(dft_out);
+  free(complex_decoded);
 
   // Init SDL
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -151,7 +154,7 @@ void compute_points(SDL_Point *points, short *dat, size_t len) {
   }
 }
 
-void compute_dft(double complex *input, double complex *output, size_t n) {
+void dft_compute(double complex *input, double complex *output, size_t n) {
   // Do for each output element.
   for (size_t i = 0; i < n; i++) {
     // Do for each input element. (Compute the sum).
@@ -164,5 +167,13 @@ void compute_dft(double complex *input, double complex *output, size_t n) {
     }
 
     output[i] = sum;
+  }
+}
+
+void dft_amp(double complex *input, double *output, size_t n) {
+  for (size_t i = 0; i < n; i++) {
+    double real = creal(input[i]);
+    double imag = cimag(input[i]);
+    output[i] = sqrt(real * real + imag * imag) / (double)n;
   }
 }
