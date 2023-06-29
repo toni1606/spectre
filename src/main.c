@@ -15,6 +15,7 @@
 #define WINDOW_HEIGHT 512
 #define WINDOW_WIDTH 512
 #define CENTER_Y (WINDOW_HEIGHT / 2)
+#define SPECTRE_DFT
 
 void min_max(short *dat, int len, int *min, int *max);
 void compute_points(SDL_Point *points, short *dat, size_t len);
@@ -43,6 +44,7 @@ int main() {
     return 1;
   }
 
+#ifdef SPECTRE_DFT
   // Specify the length of the snippet to apply the transformation to.
   // Allocate all the neccesary buffers for the DFT to store the data
   size_t dft_len = len / 50;
@@ -62,6 +64,7 @@ int main() {
   // Free unnecessary buffers.
   free(dft_out);
   free(complex_decoded);
+#endif // SPECTRE_DFT
 
   // Init SDL
   if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -79,16 +82,21 @@ int main() {
   SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
   SDL_ShowWindow(window);
 
-  // SDL_Point *points = malloc(sizeof(SDL_Point) * len);
-  // compute_points(points, decoded, len);
-  // free(decoded);
+#ifndef SPECTRE_DFT
+  SDL_Point *points = malloc(sizeof(SDL_Point) * len);
+  compute_points(points, decoded, len);
+  free(decoded);
 
+  draw_signal(points, len, sample_rate, renderer);
+#endif // SPECTRE_DFT
+
+#ifdef SPECTRE_DFT
   SDL_Point *points = malloc(sizeof(SDL_Point) * WINDOW_WIDTH);
   dft_calc_coordinates(points, WINDOW_WIDTH, amplitudes, dft_len);
   free(amplitudes);
 
-  // draw_signal(points, len, sample_rate, renderer);
   draw_dft(points, len, renderer);
+#endif // SPECTRE_DFT
 
   free(points);
   SDL_DestroyRenderer(renderer);
