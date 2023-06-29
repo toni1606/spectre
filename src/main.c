@@ -20,6 +20,12 @@ void min_max(short *dat, int len, int *min, int *max);
 void compute_points(SDL_Point *points, short *dat, size_t len);
 void dft_compute(double complex *input, double complex *output, size_t n);
 void dft_amp(double complex *input, double *output, size_t n);
+void dft_calc_coordinates(SDL_Point *points, const size_t width,
+                          const double *dat, const size_t n);
+
+void draw_signal(SDL_Point *points, size_t len, int sample_rate,
+                 SDL_Renderer *renderer);
+void draw_dft(SDL_Point *points, size_t len, SDL_Renderer *renderer);
 
 int main() {
   // Load and decode OGG file.
@@ -37,23 +43,19 @@ int main() {
     return 1;
   }
 
-  double complex *complex_decoded = malloc(sizeof(*complex_decoded) * len / 50);
-  double complex *dft_out = malloc(sizeof(*dft_out) * len / 50);
-  double *amplitudes = malloc(sizeof(*amplitudes) * len / 50);
+  size_t dft_len = len / 50;
+  double complex *complex_decoded = malloc(sizeof(*complex_decoded) * dft_len);
+  double complex *dft_out = malloc(sizeof(*dft_out) * dft_len);
+  double *amplitudes = malloc(sizeof(*amplitudes) * dft_len);
 
-  for (size_t i = 0; i < len / 50; i++) {
+  for (size_t i = 0; i < dft_len; i++) {
     complex_decoded[i] = (double)decoded[i] + 0 * I;
   }
 
   // Compute DFT and extract the amplitudes from the complex numbers.
-  dft_compute(complex_decoded, dft_out, len / 50);
-  dft_amp(dft_out, amplitudes, len / 50);
+  dft_compute(complex_decoded, dft_out, dft_len);
+  dft_amp(dft_out, amplitudes, dft_len);
 
-  for (size_t i = 0; i < len / 50; i++) {
-    printf("amp[%ld]: %lf\n", i, amplitudes[i]);
-  }
-
-  free(amplitudes);
   free(dft_out);
   free(complex_decoded);
 
@@ -73,31 +75,16 @@ int main() {
   SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
   SDL_ShowWindow(window);
 
-  SDL_Point *points = malloc(sizeof(SDL_Point) * len);
-  compute_points(points, decoded, len);
+  // SDL_Point *points = malloc(sizeof(SDL_Point) * len);
+  // compute_points(points, decoded, len);
+  // free(decoded);
 
-  // Main-Loop -> iterates once per screen.
-  size_t i = 0;
-  while (!SDL_QuitRequested()) {
-    // Set Background to black.
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-    SDL_RenderClear(renderer);
-    // Set Point color to red.
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
+  SDL_Point *points = malloc(sizeof(SDL_Point) * WINDOW_WIDTH);
+  dft_calc_coordinates(points, WINDOW_WIDTH, amplitudes, dft_len);
+  free(amplitudes);
 
-    // Break out the loop when all the points have been printed.
-    if (i >= len / WINDOW_WIDTH)
-      break;
-
-    // Render the points from the last point drawn with a count of WINDOW_WIDTH.
-    // Pointer Arithmetic to skip how many screens were drawn.
-    SDL_RenderDrawPoints(renderer, points + (i * WINDOW_WIDTH), WINDOW_WIDTH);
-    SDL_RenderPresent(renderer);
-
-    i++;
-    // Sleep for the correct time to make the waveform in sync with the audio.
-    SDL_Delay(1000.0f / (sample_rate / (float)WINDOW_WIDTH));
-  }
+  // draw_signal(points, len, sample_rate, renderer);
+  draw_dft(points, len, renderer);
 
   free(points);
   SDL_DestroyRenderer(renderer);
@@ -175,5 +162,77 @@ void dft_amp(double complex *input, double *output, size_t n) {
     double real = creal(input[i]);
     double imag = cimag(input[i]);
     output[i] = sqrt(real * real + imag * imag) / (double)n;
+  }
+}
+
+void dft_calc_coordinates(SDL_Point *points, const size_t width,
+                          const double *dat, const size_t n) {
+  size_t values_per_pixel = n / width;
+
+  if (!values_per_pixel) {
+    fprintf(stderr, "ERROR: values_per_pixel = 0\n");
+    return;
+  }
+
+  for (size_t i = 0; i < width; i++) {
+    size_t begin_offset = i * values_per_pixel;
+    size_t end_offset = (i + 1) * values_per_pixel;
+
+    // Find average height for the pixel.
+    size_t sum = 0;
+    for (size_t j = begin_offset; j < end_offset; j++) {
+      sum += dat[i];
+    }
+    size_t avg = sum / values_per_pixel;
+
+    points[i] = (SDL_Point){.x = i, .y = WINDOW_HEIGHT - 1 - avg};
+  }
+}
+
+void draw_signal(SDL_Point *points, size_t len, int sample_rate,
+                 SDL_Renderer *renderer) {
+  size_t i = 0;
+  // Main - Loop->iterates once per screen.size_t i = 0;
+  while (!SDL_QuitRequested()) {
+    // Set Background to black.
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+    SDL_RenderClear(renderer);
+    // Set Point color to red.
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
+
+    // Break out the loop when all the points have been printed.
+    if (i >= len / WINDOW_WIDTH)
+      break;
+
+    // Render the points from the last point drawn with a count of
+    // WINDOW_WIDTH.
+    // Pointer Arithmetic to skip how many screens were drawn.
+    SDL_RenderDrawPoints(renderer, points + (i * WINDOW_WIDTH), WINDOW_WIDTH);
+    SDL_RenderPresent(renderer);
+
+    i++;
+    // Sleep for the correct time to make the waveform in sync with the
+    // audio.
+    SDL_Delay(1000.0f / (sample_rate / (float)WINDOW_WIDTH));
+  }
+}
+
+void draw_dft(SDL_Point *points, size_t len, SDL_Renderer *renderer) {
+  // Set Background to black.
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
+  SDL_RenderClear(renderer);
+  // Set Point color to red.
+  SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
+
+  // Render the points from the last point drawn with a count of
+  // WINDOW_WIDTH.
+  // Pointer Arithmetic to skip how many screens were drawn.
+  SDL_RenderDrawPoints(renderer, points, WINDOW_WIDTH);
+  SDL_RenderPresent(renderer);
+
+  while (!SDL_QuitRequested()) {
+    // Sleep for the correct time to make the waveform in sync with the
+    // audio.
+    SDL_Delay(200);
   }
 }
