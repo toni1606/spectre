@@ -82,20 +82,18 @@ int main() {
   SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
   SDL_ShowWindow(window);
 
-#ifndef SPECTRE_DFT
-  SDL_Point *points = malloc(sizeof(SDL_Point) * len);
-  compute_points(points, decoded, len);
-  free(decoded);
-
-  draw_signal(points, len, sample_rate, renderer);
-#endif // SPECTRE_DFT
-
 #ifdef SPECTRE_DFT
   SDL_Point *points = malloc(sizeof(SDL_Point) * WINDOW_WIDTH);
   dft_calc_coordinates(points, WINDOW_WIDTH, amplitudes, dft_len);
   free(amplitudes);
 
   draw_dft(points, len, renderer);
+#else
+  SDL_Point *points = malloc(sizeof(SDL_Point) * len);
+  compute_points(points, decoded, len);
+  free(decoded);
+
+  draw_signal(points, len, sample_rate, renderer);
 #endif // SPECTRE_DFT
 
   free(points);
