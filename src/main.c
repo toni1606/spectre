@@ -43,11 +43,14 @@ int main() {
     return 1;
   }
 
+  // Specify the length of the snippet to apply the transformation to.
+  // Allocate all the neccesary buffers for the DFT to store the data
   size_t dft_len = len / 50;
   double complex *complex_decoded = malloc(sizeof(*complex_decoded) * dft_len);
   double complex *dft_out = malloc(sizeof(*dft_out) * dft_len);
   double *amplitudes = malloc(sizeof(*amplitudes) * dft_len);
 
+  // Convert the real numbers (decoded data) into imaginary numbers.
   for (size_t i = 0; i < dft_len; i++) {
     complex_decoded[i] = (double)decoded[i] + 0 * I;
   }
@@ -56,6 +59,7 @@ int main() {
   dft_compute(complex_decoded, dft_out, dft_len);
   dft_amp(dft_out, amplitudes, dft_len);
 
+  // Free unnecessary buffers.
   free(dft_out);
   free(complex_decoded);
 
@@ -175,6 +179,8 @@ void dft_calc_coordinates(SDL_Point *points, const size_t width,
   }
 
   for (size_t i = 0; i < width; i++) {
+    // Finds the range from where to where we need to iterate to find the
+    // average.
     size_t begin_offset = i * values_per_pixel;
     size_t end_offset = (i + 1) * values_per_pixel;
 
@@ -224,15 +230,11 @@ void draw_dft(SDL_Point *points, size_t len, SDL_Renderer *renderer) {
   // Set Point color to red.
   SDL_SetRenderDrawColor(renderer, 255, 0, 0, 0);
 
-  // Render the points from the last point drawn with a count of
-  // WINDOW_WIDTH.
-  // Pointer Arithmetic to skip how many screens were drawn.
+  // Render all the points.
   SDL_RenderDrawPoints(renderer, points, WINDOW_WIDTH);
   SDL_RenderPresent(renderer);
 
   while (!SDL_QuitRequested()) {
-    // Sleep for the correct time to make the waveform in sync with the
-    // audio.
     SDL_Delay(200);
   }
 }
