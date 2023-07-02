@@ -25,6 +25,8 @@ void dft_amp(double complex *input, double *output, size_t n);
 void dft_calc_coordinates(SDL_Point *points, const size_t width,
                           const double *dat, const size_t n);
 
+void fft_compute(double complex *input, double complex *output, size_t n);
+
 void signal_draw(SDL_Point *points, size_t len, int sample_rate,
                  SDL_Renderer *renderer);
 void dft_draw(SDL_Point *points, size_t len, SDL_Renderer *renderer);
