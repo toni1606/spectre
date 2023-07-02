@@ -18,15 +18,16 @@
 #define SPECTRE_DFT
 
 void min_max(short *dat, int len, int *min, int *max);
-void compute_points(SDL_Point *points, short *dat, size_t len);
+void signal_calc_coordinates(SDL_Point *points, short *dat, size_t len);
+
 void dft_compute(double complex *input, double complex *output, size_t n);
 void dft_amp(double complex *input, double *output, size_t n);
 void dft_calc_coordinates(SDL_Point *points, const size_t width,
                           const double *dat, const size_t n);
 
-void draw_signal(SDL_Point *points, size_t len, int sample_rate,
+void signal_draw(SDL_Point *points, size_t len, int sample_rate,
                  SDL_Renderer *renderer);
-void draw_dft(SDL_Point *points, size_t len, SDL_Renderer *renderer);
+void dft_draw(SDL_Point *points, size_t len, SDL_Renderer *renderer);
 
 int main() {
   // Load and decode OGG file.
@@ -87,7 +88,7 @@ int main() {
   dft_calc_coordinates(points, WINDOW_WIDTH, amplitudes, dft_len);
   free(amplitudes);
 
-  draw_dft(points, len, renderer);
+  dft_draw(points, len, renderer);
 #else
   SDL_Point *points = malloc(sizeof(SDL_Point) * len);
   compute_points(points, decoded, len);
@@ -114,7 +115,7 @@ void min_max(short *dat, int len, int *min, int *max) {
   }
 }
 
-void compute_points(SDL_Point *points, short *dat, size_t len) {
+void signal_calc_coordinates(SDL_Point *points, short *dat, size_t len) {
   int min, max;
   min_max(dat, len, &min, &max);
 
@@ -201,7 +202,7 @@ void dft_calc_coordinates(SDL_Point *points, const size_t width,
   }
 }
 
-void draw_signal(SDL_Point *points, size_t len, int sample_rate,
+void signal_draw(SDL_Point *points, size_t len, int sample_rate,
                  SDL_Renderer *renderer) {
   size_t i = 0;
   // Main - Loop->iterates once per screen.size_t i = 0;
@@ -229,7 +230,7 @@ void draw_signal(SDL_Point *points, size_t len, int sample_rate,
   }
 }
 
-void draw_dft(SDL_Point *points, size_t len, SDL_Renderer *renderer) {
+void dft_draw(SDL_Point *points, size_t len, SDL_Renderer *renderer) {
   // Set Background to black.
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
   SDL_RenderClear(renderer);
