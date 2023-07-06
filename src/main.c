@@ -9,6 +9,7 @@
 #include <complex.h>
 #include <limits.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -19,6 +20,7 @@
 
 void min_max(short *dat, int len, int *min, int *max);
 void signal_calc_coordinates(SDL_Point *points, short *dat, size_t len);
+bool is_power_of_2(size_t n);
 
 void dft_compute(double complex *input, double complex *output, size_t n);
 void dft_amp(double complex *input, double *output, size_t n);
@@ -247,3 +249,5 @@ void dft_draw(SDL_Point *points, size_t len, SDL_Renderer *renderer) {
     SDL_Delay(200);
   }
 }
+
+bool is_power_of_2(size_t n) { return n & (n - 1); }
