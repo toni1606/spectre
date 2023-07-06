@@ -259,6 +259,7 @@ void pad_arr(short **dat, size_t *n) {
   if (is_power_of_2(*n))
     return;
 
+  // Find next power of two.
   size_t tmp = *n;
   while (tmp & (tmp - 1)) {
     tmp &= tmp - 1;
@@ -266,6 +267,7 @@ void pad_arr(short **dat, size_t *n) {
 
   size_t new_len = tmp << 1;
 
+  // Reallocate and fill array with 0.
   short *new_dat = realloc(*dat, sizeof(*dat) * new_len);
 
   if (new_dat == NULL) {
@@ -280,3 +282,5 @@ void pad_arr(short **dat, size_t *n) {
   *n = new_len;
   *dat = new_dat;
 }
+
+void fft_compute(double complex *input, double complex *output, size_t n) {}
