@@ -21,6 +21,7 @@
 void min_max(short *dat, int len, int *min, int *max);
 void signal_calc_coordinates(SDL_Point *points, short *dat, size_t len);
 bool is_power_of_2(size_t n);
+void pad_arr(short **dat, size_t *n);
 
 void dft_compute(double complex *input, double complex *output, size_t n);
 void dft_amp(double complex *input, double *output, size_t n);
@@ -39,7 +40,7 @@ int main() {
   int sample_rate;
   short *decoded;
 
-  int len =
+  size_t len =
       stb_vorbis_decode_filename("/home/toni/Documents/Files/Personal_TG/"
                                  "programming/Projects/spectrogram/sine.ogg",
                                  &channels, &sample_rate, &decoded);
@@ -48,6 +49,8 @@ int main() {
     fprintf(stderr, "ERROR: Could not read file!\n");
     return 1;
   }
+
+  pad_arr(&decoded, &len);
 
 #ifdef SPECTRE_DFT
   // Specify the length of the snippet to apply the transformation to.
@@ -95,10 +98,10 @@ int main() {
   dft_draw(points, len, renderer);
 #else
   SDL_Point *points = malloc(sizeof(SDL_Point) * len);
-  compute_points(points, decoded, len);
+  signal_calc_coordinates(points, decoded, len);
   free(decoded);
 
-  draw_signal(points, len, sample_rate, renderer);
+  signal_draw(points, len, sample_rate, renderer);
 #endif // SPECTRE_DFT
 
   free(points);
@@ -250,4 +253,30 @@ void dft_draw(SDL_Point *points, size_t len, SDL_Renderer *renderer) {
   }
 }
 
-bool is_power_of_2(size_t n) { return n & (n - 1); }
+bool is_power_of_2(size_t n) { return ((n & (n - 1)) == 0) ? true : false; }
+
+void pad_arr(short **dat, size_t *n) {
+  if (is_power_of_2(*n))
+    return;
+
+  size_t tmp = *n;
+  while (tmp & (tmp - 1)) {
+    tmp &= tmp - 1;
+  }
+
+  size_t new_len = tmp << 1;
+
+  short *new_dat = realloc(*dat, sizeof(*dat) * new_len);
+
+  if (new_dat == NULL) {
+    fprintf(stderr, "ERROR: Could not make array bigger\n");
+    return;
+  }
+
+  for (size_t i = *n; i < new_len; i++) {
+    new_dat[i] = 0;
+  }
+
+  *n = new_len;
+  *dat = new_dat;
+}
