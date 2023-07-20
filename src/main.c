@@ -13,6 +13,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define SWAP(x, y, T)                                                          \
+  do {                                                                         \
+    T tmp = x;                                                                 \
+    x = y;                                                                     \
+    y = tmp;                                                                   \
+  } while (0);
+
 #define WINDOW_HEIGHT 512
 #define WINDOW_WIDTH 512
 #define CENTER_Y (WINDOW_HEIGHT / 2)
@@ -22,6 +29,8 @@ void min_max(short *dat, int len, int *min, int *max);
 void signal_calc_coordinates(SDL_Point *points, short *dat, size_t len);
 bool is_power_of_2(size_t n);
 void pad_arr(short **dat, size_t *n);
+void arr_rev(double complex *dat, size_t n);
+size_t bit_rev(size_t n);
 
 void dft_compute(double complex *input, double complex *output, size_t n);
 void dft_amp(double complex *input, double *output, size_t n);
@@ -63,6 +72,17 @@ int main() {
   // Convert the real numbers (decoded data) into imaginary numbers.
   for (size_t i = 0; i < dft_len; i++) {
     complex_decoded[i] = (double)decoded[i] + 0 * I;
+  }
+
+  for (size_t i = 0; i < 16; i++) {
+    printf("%lf+ %lfi\n", creal(complex_decoded[i]), cimag(complex_decoded[i]));
+  }
+  printf("\n\n");
+
+  arr_rev(complex_decoded, dft_len);
+
+  for (size_t i = 0; i < 16; i++) {
+    printf("%lf+ %lfi\n", creal(complex_decoded[i]), cimag(complex_decoded[i]));
   }
 
   // Compute DFT and extract the amplitudes from the complex numbers.
@@ -281,6 +301,36 @@ void pad_arr(short **dat, size_t *n) {
 
   *n = new_len;
   *dat = new_dat;
+}
+
+void arr_rev(double complex *dat, size_t n) {
+  // Iterate only half of the samples, because if you swap the second half you
+  // would just be reversing the previous swap.
+  size_t j = 0;
+  for (size_t i = 0; i < n / 2; i++) {
+    if (j > i) {
+      SWAP(dat[i], dat[j], double complex);
+
+      if ((j / 2) < (n / 4)) {
+        SWAP(dat[n - (i + 1)], dat[n - (j + 1)], double complex);
+      }
+    }
+
+    // Bit reversal stuff.
+    // size_t m = n / 2;
+    j = bit_rev(i);
+    // printf("j afer iter: %zu\n", j);
+  }
+}
+
+size_t bit_rev(size_t n) {
+  size_t rev = 0;
+
+  for (size_t i = 0; i < sizeof(n) * 8; i++, n >>= 1) {
+    rev = (rev << 1) | (n & 0x01);
+  }
+
+  return rev;
 }
 
 void fft_compute(double complex *input, double complex *output, size_t n) {}
